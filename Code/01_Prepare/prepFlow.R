@@ -119,5 +119,8 @@ flow <- dplyr::rename(flow,
                       other = `OtherMethod_AllSexes_Age16Plus`
 )
 
-saveRDS(flow,"../pct-lsoa/data/02_Input/LSOA_flow.Rds")
+flow <- onewayid(flow, attrib = 3:54, id1 ="lsoa1", id2 = "lsoa2") #Pair up bidirectional flows
+flow$id <- paste(pmin(flow$lsoa1, flow$lsoa2), pmax(flow$lsoa1, flow$lsoa2)) #Create ID
+
+saveRDS(flow,"../pct-lsoa/data/02_Input/LSOA_flow_oneway.Rds")
 
