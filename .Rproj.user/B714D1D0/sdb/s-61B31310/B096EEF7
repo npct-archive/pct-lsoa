@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "#This code creates LSOA desire lines based on subsetting rules\n\n# Libraries\nlibrary(sp)\n\n\n\n#Parameters\nmax_length <- 20  #Maximum lenght of lines\nmin_people <- 0   #Minimum number of communters in a line \n\n\n\n#Inputs\nflow <- readRDS(\"../pct-lsoa/Data/02_Input/LSOA_flow.Rds\")\ncents <- readRDS(\"../pct-lsoa/Data/02_Input/LSOA_cents.Rds\")\n\n#Subset flow to min_people\nflow <- flow[flow$all_16p >= min_people ,]\n\n\n\n",
+    "created" : 1479990467102.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "401893474",
+    "id" : "B096EEF7",
+    "lastKnownWriteTime" : 1479991021,
+    "last_content_update" : 1479991021692,
+    "path" : "D:/Git/pct-lsoa/Code/02_Create/create_lines.R",
+    "project_path" : "Code/02_Create/create_lines.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

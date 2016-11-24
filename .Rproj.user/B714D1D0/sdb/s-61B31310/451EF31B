@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "# Merge Anna's data into the lines data\n# This code takes in the the national data of lines and routes produced by malcolm\n# and the scenario data produced by anna\n# it joins them together asuming that anna has the right data\n# is then save out the result overwriting the original l_nat file\n\nlibrary(dplyr)\npath_to_routes <- \"D:/Users/earmmor/OneDrive - University of Leeds/Cycling Big Data/ToNatBuild/\"\nl_nat <- readRDS(file.path(path_to_routes, \"lines_allonefile.Rds\"))\nl_nat@data = l_nat@data[c(\"id\", \"is_two_way\", \"dist\")]\n\n# Add new lines\n\nrf <- readRDS(file.path(path_to_routes, \"rf_allonefile_withIDandANNA.Rds\"))\nrq <- readRDS(file.path(path_to_routes, \"rq_allonefile_withIDandANNA_rf.Rds\"))\n# check they're the same\nn = 76576 # try many values\nplot(rf[n,]); plot(rq[n,], add = TRUE); plot(l_nat[n,], add = TRUE)# yes, good\n\npath_to_dropbox <- \"C://Users/georl/Dropbox\"\nf = file.path(path_to_dropbox, \"PCT/xx-PCTAreaLines_TEMP/161103_PCTarealines_csv.zip\")\nunzip(zipfile = f)\nl_anna = readr::read_csv(\"161103_PCTarealines_csv/pct_lines.csv\")\nl_anna$id <- paste(pmin(l_anna$msoa1, l_anna$msoa2), pmax(l_anna$msoa1, l_anna$msoa2))\nl_nat$id <- paste(pmin(l_nat$msoa1, l_nat$msoa2), pmax(l_nat$msoa1, l_nat$msoa2))\nl_nat_merged <- left_join(l_nat@data, l_anna, by = \"id\")\nl_nat@data = l_nat_merged\n\n# Remove flows without scenario data\nl_nat <- l_nat[!is.na(l_nat@data$govtarget_slc),]\nrf <- rf[!is.na(l_nat@data$govtarget_slc),]\nrq <- rq[!is.na(l_nat@data$govtarget_slc),]\n\nl_nat@data = dplyr::rename(l_nat@data,\n                            all = all.y,\n                            msoa1 = msoa1.y,\n                            msoa2 = msoa2.y,\n                            light_rail = light_rail.y,\n                            train = train.y,\n                            bus = bus.y,\n                            taxi = taxi.y,\n                            motorbike = motorbike.y,\n                            car_driver = car_driver.y,\n                            car_passenger = car_passenger.y,\n                            bicycle = bicycle.y,\n                            foot = foot.y,\n                            other = other.y\n)\n\nremove_cols <- function(df, col_regex){\n  df[,!grepl(col_regex, names(df))]\n}\nl_nat@data <- remove_cols(l_nat@data, \"\\\\.x\") # remove the dupped columns\n\nsaveRDS(l_nat,\"../pct-bigdata/msoa/l_nat.Rds\")\nsaveRDS(rf,\"../pct-bigdata/msoa/rf_nat.Rds\")\nsaveRDS(rq,\"../pct-bigdata/msoa/rq_nat.Rds\")\n",
+    "created" : 1479991233017.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2522354607",
+    "id" : "451EF31B",
+    "lastKnownWriteTime" : 1479485390,
+    "last_content_update" : 1479485390,
+    "path" : "D:/Git/pct-load/R/merge_annas_into_lines.R",
+    "project_path" : null,
+    "properties" : {
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
