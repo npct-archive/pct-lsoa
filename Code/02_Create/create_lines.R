@@ -7,17 +7,16 @@ library(stplanr)
 #Parameters
 max_length <- 20    #Maximum lenght of lines in km
 min_length <- 0     #Minimum lenght of lines in km
-min_people <- 10    #Minimum number of communters in a line
-region <- "Camb"    #Subset to an area for testing set to NULL for national build, uses text search on LSOA names
+min_people <- 0    #Minimum number of communters in a line
+region <- NULL    #Subset to an area for testing set to NULL for national build, uses text search on LSOA names
 
 #Inputs
 flow <- readRDS("../pct-lsoa/Data/02_Input/LSOA_flow.Rds")
-#flow <- flow[,c("lsoa1","lsoa2","id","all_16p")] # Remove unneeded data from the lines 
-
 cents <- readRDS("../pct-lsoa/Data/02_Input/LSOA_cents.Rds")
 
 #Subset
 flow <- flow[flow$all_16p >= min_people ,]
+flow <- flow[,c("id","dist")]
 if(!is.null(region)){cents = cents[grep(pattern = region, x = cents$name),]}
 
 # Generate the Lines
@@ -35,7 +34,7 @@ summary(is.na(cents_d))
 geodist = geosphere::distHaversine(p1 = cents_o, p2 = cents_d) / 1000 # assign euclidean distanct to lines (could be a function in stplanr)
 summary(is.na(geodist))
 
-hist(geodist, breaks = 0:800)
+hist(geodist)
 flow$dist = geodist
 flow = flow[!is.na(flow$dist),] # destinations with no matching cents - remove
 flow = flow[flow$dist >= min_length,] # subset based on euclidean distance
@@ -53,6 +52,4 @@ if(is.null(region)) {
   saveRDS(lines,paste0("../pct-lsoa/Data/03_Intermediate/l_",region,".Rds"))
 }
 
- 
-
-
+lines@data <- lines@data[,c("id","dist")]
