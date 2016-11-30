@@ -90,7 +90,5 @@ flow_all <- rbind(flow_dup, flow_nodup)
 flow_all$id <- paste(pmin(flow_all$lsoa1, flow_all$lsoa2), pmax(flow_all$lsoa1, flow_all$lsoa2)) #Create ID
 class(flow_all)
 flow_all <- as.data.frame(flow_all)
-rownames(flow_all) <- c(1:nrow(flow_all))
+row.names(flow_all) <- c(1:nrow(flow_all))
 saveRDS(flow_all,"../pct-lsoa/data/02_Input/LSOA_flow.Rds")
-
-
