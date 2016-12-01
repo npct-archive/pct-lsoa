@@ -9,12 +9,22 @@
 #non over lapping lines added to the group then checking that remaing don't overlap with each other
 
 
+#####################
+#Ideas
+
+#Pregenerate the matrixes so that the line_master can be removed from memory
+
+#Parallel the process
+
+
+##########################
+
 #Inputs
 lines_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus.Rds")
 #lines_master <- lines_master[1:5000,] #test subset
 
 #Parameters
-size_limit = 10000
+size_limit = 1000
 file_name = "rf_nat_4plus_groups" #What output filename should be
 
 #libs
@@ -44,8 +54,10 @@ i_start <- 1 #Sets a starting point for outer loop, loops go though ranges that 
 
 time_start <- Sys.time()
 #Loop for when too many lines
+#done 1-142
 for(v in 1:goes){
   print(paste0("Doing loop ",as.character(v)," of ",as.character(goes)," at ",Sys.time()))
+  saveRDS(groups,paste0("../pct-lsoa/Data/03_Intermediate/groups/",file_name,"_dump.Rds"))
   #lines <- lines_master[seq.int(from = v, to = nrow(lines_master), goes),] # Subset evenly across the country
   if((v*size_limit)>=nrow(lines_master)){l_max = nrow(lines_master)}else{l_max = (v*size_limit)}
   lines = lines_master[(1 + (v-1)*size_limit):l_max,]
