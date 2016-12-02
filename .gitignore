@@ -4,4 +4,14 @@
 Data/01_Raw/Flow/WM12EW[CT0489]_lsoa.zip
 Data/02_Input/LSOA_flow.Rds
 Data/03_Intermediate/temp/
+Data/03_Intermediate/groups/
+Data/03_Intermediate/routes/
+Data/03_Intermediate/lines/
+Data/03_Intermediate/interaction/
 
+*.Rhistory
+.Renvrion
+*.pper
+.Rhistory
+*.Rhistory
+*.zip
