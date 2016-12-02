@@ -1,4 +1,10 @@
-#This code takes straight lines and produces routes
+#This code takes straight liens and produces routes
+
+###################################
+#Developmenet code - not tested
+###################################
+
+
 
 #Inputs
 lines <- readRDS("../pct-lsoa/Data/03_Intermediate/lines/l_nat_less3p.Rds")
@@ -28,6 +34,17 @@ for(i in 1:nbatch){
   routes <- line2route(l = lines_sub, route_fun = route_cyclestreet, plan = route_type, base_url = "http://pct.cyclestreets.net/api/")
   routes@data <- routes@data[,!names(routes@data) %in% c("plan","start","finish")]
   routes@data$ID <- lines_sub@data$id
+  #Check for missing lines - untested code
+  missing <- routes@data$ID[is.na(routes@data$length)]
+  if(length(missing) >0){
+    print(paste0(length(missing)," lines failed to route, trying again"))
+    missing_l <- lines_sub[lines_sub$id %in% missing,]
+    missing_r <- line2route(l = missing_l, route_fun = route_cyclestreet, plan = route_type, base_url = "http://pct.cyclestreets.net/api/")
+    print(paste0("When trying again ",lenght(missing_r@data$ID[is.na(missing_r@data$length)])," lines failed again"))
+    routes <- routes[!(routes$ID %in% missing),] #Remove failed routes
+    routes <- spRbind(routes, missing_r)
+  } 
+  ##############
   saveRDS(routes,file = paste0("../pct-lsoa/Data/03_Intermediate/temp/r",substr(route_type, 1, 1),"_",file_name,"_",i,"of",nbatch,".Rds"))
   print(paste0("Batch ",i," of ",nbatch," finished at ",Sys.time()))
   

@@ -93,7 +93,7 @@ for(i in i_start:(i_start + nrow(matrix))){ #loop thought every line
         #print(paste0("row ",row2," added to group ",i," Inner Loop"))
         partners2 = matrix[rownames(matrix) == row2,] #Get jsut the row for this line
         matrix = matrix[!(rownames(matrix) %in% row2),!(colnames(matrix) %in% row2), drop = F] #remove this line from the matrix
-        submatrix = submatrix[!(rownames(submatrix) %in% row2),!(colnames(submatrix) %in% row2), drop = F] #remove this line from the submatrix
+        submatrix = submatrix[!(rownames(submatrix)rf_ %in% row2),!(colnames(submatrix) %in% row2), drop = F] #remove this line from the submatrix
         partners_name2 = names(partners2[partners2 == FALSE]) #get list of lines that don't overlap with this line
         submatrix = submatrix[(rownames(submatrix) %in% partners_name2),(colnames(submatrix) %in% partners_name2), drop = F] #subset the submatrix to lines that don't overlap with this line
         progress = progress + 1

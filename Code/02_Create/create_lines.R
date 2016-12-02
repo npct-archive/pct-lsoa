@@ -4,7 +4,9 @@
 max_length <- 20    #Maximum lenght of lines in km
 min_length <- 0     #Minimum lenght of lines in km
 min_people <- 0    #Minimum number of communters in a line
+max_people <- 3   #Maximum number of communters in a line
 region <- NULL    #Subset to an area for testing set to NULL for national build, uses text search on LSOA names
+name <- "_less3p"  #Txt name to be added to file
 
 #Inputs
 flow <- readRDS("../pct-lsoa/Data/02_Input/LSOA_flow.Rds")
@@ -17,6 +19,7 @@ library(rgdal)
 
 #Subset
 flow <- flow[flow$all_16p >= min_people ,]
+flow <- flow[flow$all_16p <= max_people ,]
 flow <- flow[,c("lsoa1","lsoa2","id")]
 if(!is.null(region)){cents = cents[grep(pattern = region, x = cents$name),]}
 
@@ -48,9 +51,9 @@ lines@data <- lines@data[,c("id","dist")]
 
 #Save the lines file name based on if national build or not
 if(is.null(region)) {
-  saveRDS(lines,"../pct-lsoa/Data/03_Intermediate/lines/l_nat.Rds")
+  saveRDS(lines,paste0("../pct-lsoa/Data/03_Intermediate/lines/l_nat",name,".Rds"))
 } else {
-  saveRDS(lines,paste0("../pct-lsoa/Data/03_Intermediate/lines/l_",region,".Rds"))
+  saveRDS(lines,paste0("../pct-lsoa/Data/03_Intermediate/lines/l_",region,name,".Rds"))
 }
 
 
