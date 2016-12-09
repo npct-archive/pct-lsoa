@@ -16,7 +16,7 @@ library(stplanr)
 #Code
 nbatch <- ceiling(nrow(lines)/size_limit)
 
-for(i in 1:nbatch){
+for(i in 170:nbatch){
   l_start <- as.integer(1 + (i-1)*size_limit)
   if(i*size_limit < nrow(lines)){
     l_fin <- as.integer(i*size_limit)

@@ -15,10 +15,7 @@ group_no <- 1
 
 for(h in 1:h_end){
   matrix_master = readRDS(paste0("../pct-lsoa/Data/03_Intermediate/interaction/rf_nat_4plus_IM_",h,".Rds"))
-  groups = data.frame(id_new=as.integer(1:nrow(matrix_master)),id_old=as.character(rownames(matrix_master)),count=as.integer(rowSums(matrix_master)), group=as.integer(0))
-  rownames(matrix_master) = groups$id_new
-  colnames(matrix_master) = groups$id_new
-  matrix = matrix_master
+   
   brk = 0
   
   #Remove the low hanging fuit of large groups that don't overlap much
@@ -93,7 +90,7 @@ for(i in i_start:(i_start + nrow(matrix))){ #loop thought every line
         #print(paste0("row ",row2," added to group ",i," Inner Loop"))
         partners2 = matrix[rownames(matrix) == row2,] #Get jsut the row for this line
         matrix = matrix[!(rownames(matrix) %in% row2),!(colnames(matrix) %in% row2), drop = F] #remove this line from the matrix
-        submatrix = submatrix[!(rownames(submatrix)rf_ %in% row2),!(colnames(submatrix) %in% row2), drop = F] #remove this line from the submatrix
+        submatrix = submatrix[!(rownames(submatrix) %in% row2),!(colnames(submatrix) %in% row2), drop = F] #remove this line from the submatrix
         partners_name2 = names(partners2[partners2 == FALSE]) #get list of lines that don't overlap with this line
         submatrix = submatrix[(rownames(submatrix) %in% partners_name2),(colnames(submatrix) %in% partners_name2), drop = F] #subset the submatrix to lines that don't overlap with this line
         progress = progress + 1
@@ -112,3 +109,35 @@ for(i in i_start:(i_start + nrow(matrix))){ #loop thought every line
   saveRDS(groups,paste0("../pct-lsoa/Data/03_Intermediate/groups/rf_nat_4plus_groups_fin_alt_",h,".Rds"))
 }
 saveRDS(groups_master,"../pct-lsoa/Data/03_Intermediate/groups/rf_nat_4plus_groups_fin_alt.Rds")
+
+#About 25% of routes will have been sorted out but some into really small groups
+#Psodocode
+groups_summary <- as.data.frame(table(groups_master$group))
+hist(groups_summary$Freq)
+smallgroup <- as.integer(groups_summary$Var1[groups_summary$Freq < 3])
+#smallgroup <- c(0,smallgroup)
+#unsorted <- groups_master$id_new[groups_master$group %in% smallgroup]
+#remove the group number from small groups
+groups_master$group[groups_master$id_new %in% unsorted] <- 0
+nrow(groups_master[groups_master$group == 0,])
+
+#loop though  to create new interaction matrix and reapply the LHF method
+groups_un_master = groups_master[groups_master$group %in% smallgroup,]
+routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus.Rds")
+routes_master = routes[routes$ID %in% groups_un_master$id_old,]
+size_limit = 10000
+
+if(nrow(routes_master) < size_limit){
+  goes = 1
+} else {
+  goes = ceiling(nrow(groups_un_master)/size_limit)
+}
+
+
+
+for(i in 1:goes){
+  routes = routes_master[seq.int(from = i, to = nrow(groups_un_master), goes),] #Subset across the country
+  matrix_master = gIntersects(routes, byid = T)
+  rowsum = data.frame(id = rownames(matrix),count=as.integer(rowSums(matrix)))
+}
+
