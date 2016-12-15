@@ -8,6 +8,7 @@ Data/03_Intermediate/groups/
 Data/03_Intermediate/routes/
 Data/03_Intermediate/lines/
 Data/03_Intermediate/interaction/
+Data/04_Output/rasters
 
 *.Rhistory
 .Renvrion
@@ -15,3 +16,6 @@ Data/03_Intermediate/interaction/
 .Rhistory
 *.Rhistory
 *.zip
+*.pper
+*.pper
+*.grd

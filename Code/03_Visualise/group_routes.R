@@ -1,117 +1,134 @@
-#Before Rasterising the routes the must be sorted into groups
-#such that within a group no routes overlap
-#tHis code create those groups from a given input
-
-#1) Create a table of lines and which group they are in
-#2) Create a intraction matrix of lines that do and don't overlap
-#3a) Outer Loop - Loop thought lines from least overlapping to most overlapping
-#3b) Inner Loop - Having idetified a line in Outer loop, loop though all of its 
-#non over lapping lines added to the group then checking that remaing don't overlap with each other
-
-
-#####################
-#Ideas
-
-#Pregenerate the matrixes so that the line_master can be removed from memory
-
-#Parallel the process
-
-
-##########################
-
-#Inputs
-lines_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus.Rds")
-#lines_master <- lines_master[1:5000,] #test subset
+#Route routes using the groupsin functions
 
 #Parameters
-size_limit = 1000
-file_name = "rf_nat_4plus_groups" #What output filename should be
+name = "rf_nat_less3p_region2" #Output file name
 
-#libs
-library(rgeos)
-#library(raster)
-library(sp) 
-#library(rgdal)
+#Libs
 library(dplyr)
-library(utils)
 
-#Code
-lines_master@data = subset(lines_master@data, select=c("ID"))
 
-#Simplify IDs
-#id2id <- data.frame(id_old=lines_master$id,id_new=1:nrow(lines_master))
-groups <-  data.frame(id_old=as.character(lines_master$ID),id_new=1:nrow(lines_master),nrow=as.integer(0)) #create a table of IDs to store which group they should go in
-lines_master$ID <- groups$id_new
+#Inputs
+routes = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_less3p_fix.Rds")
+lines_zones <- readRDS("../pct-lsoa/Data/03_Intermediate/lines/l_nat_region2.Rds")
+flow_data = readRDS("../pct-lsoa/Data/02_Input/LSOA_flow.Rds")
 
-#Check if too many lines to do at once
-if(nrow(lines_master) < size_limit){
-  goes = 1
-} else {
-  goes = ceiling(nrow(lines_master)/size_limit)
-}
+#Prep and Join data
+flow_data = flow_data[,c("id","bicycle_16p")]
+flow_data = flow_data[flow_data$bicycle_16p > 0,]
+routes <- routes[routes$ID %in% flow_data$id,]
+routes@data = left_join(routes@data, flow_data, by = c("ID" = "id"))
+routes@data = routes@data[,c("ID","bicycle_16p")]
+names(routes@data) = c("id","bike")
+remove(flow_data)
+routes <- routes[routes$id %in% lines_zones$id,]
+remove(lines_zones)
+#plot(routes)
 
-i_start <- 1 #Sets a starting point for outer loop, loops go though ranges that don't overlap with previous loops
+#Start Grouping
+source("../pct-lsoa/Code/03_Visualise/grouping_functions.R")
 
-time_start <- Sys.time()
-#Loop for when too many lines
-#done 1-142
-for(v in 1:goes){
-  print(paste0("Doing loop ",as.character(v)," of ",as.character(goes)," at ",Sys.time()))
-  saveRDS(groups,paste0("../pct-lsoa/Data/03_Intermediate/groups/",file_name,"_dump.Rds"))
-  #lines <- lines_master[seq.int(from = v, to = nrow(lines_master), goes),] # Subset evenly across the country
-  if((v*size_limit)>=nrow(lines_master)){l_max = nrow(lines_master)}else{l_max = (v*size_limit)}
-  lines = lines_master[(1 + (v-1)*size_limit):l_max,]
-  matrix_master= gIntersects(lines, byid = T) 
-  colnames(matrix_master) <- lines$ID
-  rownames(matrix_master) <- lines$ID
-  matrix = matrix_master
-  #groups =  data.frame(id_new=as.character(lines$ID),nrow=as.integer(0)) #create a table of IDs to store which group they should go in
-  pb <- winProgressBar(title="Grouping progress bar", min=0, max=nrow(lines), initial=0, label="0 lines done")
-  progress = 0
-  #Outer Loop
-  for(i in i_start:(i_start + nrow(lines))){ #loop thought every line
-    rowsum = data.frame(name=rownames(matrix),count=rowSums(matrix)) 
-    if(nrow(matrix) == 0){
-      i_start <- i + 1
-      break()
-    }
-    else {
-      max1 = max(rowsum$count)
-      row1 = as.character(rowsum$name[rowsum$count == max1][1])
-      groups[groups$id_new==row1,3] <- i
-      #print(paste0("row ",row1," added to group ",i," OL"))
-      partners1 = matrix[rownames(matrix) == row1,]
-      partners_name1 = names(partners1[partners1 == FALSE])
-      matrix = matrix[!(rownames(matrix) %in% row1),!(colnames(matrix) %in% row1), drop = F]
-      submatrix = matrix[(rownames(matrix) %in% partners_name1),(colnames(matrix) %in% partners_name1), drop = F]
-      #Inner Loop
-      
-      for(j in 1:nrow(submatrix)){
-        if(nrow(submatrix) == 0){
-          break()
-        }
-        else {
-          subrowsum = data.frame(name=rownames(submatrix),count=rowSums(submatrix)) #Sum all rows in the sub matrix (this is time consuming)
-          max2 = max(subrowsum$count) #find most overlapping line
-          row2 = as.character(subrowsum$name[subrowsum$count == max2][1]) #get ID of most overlapping line
-          groups[groups$id_new==row2,3] <- i #update the groups table
-          #print(paste0("row ",row2," added to group ",i," IL"))
-          partners2 = matrix[rownames(matrix) == row2,] #Get jsut the row for this line
-          matrix = matrix[!(rownames(matrix) %in% row2),!(colnames(matrix) %in% row2), drop = F] #remove this line from the matrix
-          submatrix = submatrix[!(rownames(submatrix) %in% row2),!(colnames(submatrix) %in% row2), drop = F] #remove this line from the submatrix
-          partners_name2 = names(partners2[partners2 == FALSE]) #get list of lines that don't overlap with this line
-          submatrix = submatrix[(rownames(submatrix) %in% partners_name2),(colnames(submatrix) %in% partners_name2), drop = F] #subset the submatrix to lines that don't overlap with this line
-          progress = progress + 1
-          info <- sprintf("%d lines done", progress)
-          setWinProgressBar(pb, progress, label = info)
-        }
-      }
-    }
-    
+#Use Grid/Bearing Approach with a 1k grid
+stage = 1
+groups_1 = grouplines_GrdBear(routes, group_no = 1, grid_size = 1000, attempts = 2)
+unfin = groups_1$id_old[is.na(groups_1$group)]
+routes_unfin = routes[routes$id %in% unfin,]
+nxtgrp = max(groups_1$group[!is.na(groups_1$group)]) + 1
+groups_1 = groups_1[!is.na(groups_1$group),]
+groups_1 = groups_1[,c("id_old","id_new","group")]
+#saveRDS(groups_1,paste0("../pct-lsoa/Data/03_Intermediate/temp/",name,"_p",stage,".Rds"))
+stage = stage + 1
+#remove(groups_1)
+
+#Use Grid/Bearing Approach with a 10k grid
+groups_2 = grouplines_GrdBear(routes_unfin, group_no = nxtgrp, grid_size = 10000, attempts = 20)
+unfin = groups_2$id_old[is.na(groups_2$group)]
+routes_unfin = routes[routes$id %in% unfin,]
+nxtgrp = max(groups_2$group[!is.na(groups_2$group)]) + 1
+groups_2 = groups_2[!is.na(groups_2$group),]
+groups_2 = groups_2[,c("id_old","id_new","group")]
+#saveRDS(groups_2,paste0("../pct-lsoa/Data/03_Intermediate/temp/",name,"_p",stage,".Rds"))
+stage = stage + 1
+
+#Use Grid Appraoch with a 20k grid
+groups_3 = grouplines_grid(routes_unfin,nxtgrp,20000)
+unfin = groups_3$id_old[is.na(groups_3$group)]
+routes_unfin = routes[routes$id %in% unfin,]
+nxtgrp = max(groups_3$group[!is.na(groups_3$group)]) + 1
+groups_3 = groups_3[!is.na(groups_3$group),]
+groups_3 = groups_3[,c("id_old","id_new","group")]
+#saveRDS(groups_3,paste0("../pct-lsoa/Data/03_Intermediate/temp/",name,"_p",stage,".Rds"))
+stage = stage + 1
+
+#Use complete approach with small batch sizes
+groups_4 <- grouplines_complete(routes_unfin, nxtgrp, 2000)
+summary(is.na(groups_4$nrow)) #Should be no ungrouped lines
+nxtgrp = max(groups_4$nrow[!is.na(groups_4$nrow)]) + 1
+groups_4 = groups_4[!is.na(groups_4$nrow),]
+names(groups_4) = c("id_new","group","id_old")
+groups_4 = groups_4[,c(3,1,2)]
+#saveRDS(groups_4,paste0("../pct-lsoa/Data/03_Intermediate/temp/",name,"_p",stage,".Rds"))
+stage = stage + 1
+
+#clean up
+groups_all = rbind(groups_1,groups_2,groups_3,groups_4)
+saveRDS(groups_all,paste0("../pct-lsoa/Data/03_Intermediate/temp/",name,"_p",stage,".Rds"))
+remove(groups_1,groups_2,groups_3,groups_4)
+
+summary(is.na(groups_all$group))
+groups_summary = as.data.frame(table(groups_all$group))
+hist(groups_summary$Freq)
+
+for(l in 1:20){
+  print(paste0("Attempting to remove small groups, attempt ", l," at ",Sys.time()))
+  #We have now grouped all the lines but many lines will have been grouped poorly
+  groups_summary = as.data.frame(table(groups_all$group))
+  groups_summary$Var1 = as.integer(levels(groups_summary$Var1))[groups_summary$Var1] #as.integer(groups_summary$Var1)
+  groups_all$group = as.integer(groups_all$group)
+  #Work out how many lines are poorly grouped
+  freq_summary = data.frame(freq = unique(groups_summary$Freq), sum = as.integer(0))
+  for(j in 1:nrow(freq_summary)){
+    freq_summary$sum[j] = sum(groups_summary$Freq[groups_summary$Freq == freq_summary$freq[j]])
   }
-  close(pb)
+  #We don't want to rerun loads of lines so work out threshold for 5000 lines
+  threshold = 1
+  for(k in 1:600){
+    sum = sum(freq_summary$sum[freq_summary$freq <= threshold])
+    if(sum > 5000){
+      break()
+    } else {
+      threshold = threshold + 1
+    }
+  }
+  smallgroups = groups_summary[groups_summary$Freq <= threshold,]
+  regroup = groups_all[groups_all$group %in% smallgroups$Var1,]
+  routes_regroup = routes[routes$id %in% regroup$id_old,]
+  print(paste0("We are taking the smallest ",length(unique(regroup$group))," groups"))
+
+  #Use complete approach with small batch sizes
+  groups <- grouplines_complete(routes_regroup, nxtgrp, 6000)
+  summary(is.na(groups$nrow)) #Should be no ungrouped lines
+  nxtgrp = max(groups$nrow[!is.na(groups$nrow)]) + 1
+  groups = groups[!is.na(groups$nrow),]
+  names(groups) = c("id_new","group","id_old")
+  groups = groups[,c(3,1,2)]
+  #saveRDS(groups,paste0("../pct-lsoa/Data/03_Intermediate/groups/",name,"_p",stage,".Rds"))
+  stage = stage + 1
+  print(paste0("Replaced with ",length(unique(groups$group))," new groups"))
+
+  #Update Groups_all
+  groups_all$id_old = as.character(groups_all$id_old )
+  groups$id_old = as.character(groups$id_old )
+
+  for(i in 1:nrow(groups)){
+    groups_all$group[groups_all$id_old == groups$id_old[i]] <- groups$group[i]
+  }
+
+  #saveRDS(groups_all,paste0("../pct-lsoa/Data/03_Intermediate/groups/",name,"_p",stage,".Rds"))
+  stage = stage + 1
+  groups_summary = as.data.frame(table(groups_all$group))
+  hist(groups_summary$Freq)
+  print(paste0("There a now ",length(unique(groups_all$group))," groups in total"))
+
 }
-print(paste0("Completed ",goes," batches of ",size_limit," in ",round(difftime(Sys.time(),time_start, units = "mins")), " minutes"))
-saveRDS(groups,paste0("../pct-lsoa/Data/03_Intermediate/groups/",file_name,".Rds"))
 
-
+saveRDS(groups_all,paste0("../pct-lsoa/Data/03_Intermediate/groups/",name,"_finished.Rds"))
