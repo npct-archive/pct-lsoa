@@ -1,3 +1,4 @@
+#ArcGIS Export
 #Convert routes to a raster based on the number of cyclists
 #WHen rasterizing it is necessary to not have overlapping lines
 
@@ -9,35 +10,49 @@ library(rgeos)
 library(velox)
 library(raster)
 library(dplyr)
+library(rgdal)
 
 #Inputs
 routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus_fix.Rds")
-groups_master = readRDS("../pct-lsoa/Data/03_Intermediate/groups/rf_nat_4plus_region2_finished.Rds")
+#groups_master = readRDS("../pct-lsoa/Data/03_Intermediate/groups/rf_nat_4plus_region1_finished2.Rds")
 flow_data = readRDS("../pct-lsoa/Data/02_Input/LSOA_flow.Rds")
 
 #Parameters
 resolution = 20 #Equal to OSM zoom level 13
 
 #Prep and Join data
-groups_master$id_old = as.character(groups_master$id_old)
-groups_master = groups_master[!is.na(groups_master$group),]
-flow_data = flow_data[,c("id","bicycle_16p")]
-flow_data = flow_data[flow_data$id %in% groups_master$id_old,]
-routes_master = routes_master[routes_master$ID %in% groups_master$id_old,]
-flow_data = left_join(flow_data,groups_master, by = c("id" = "id_old"))
-routes_master@data = left_join(routes_master@data, flow_data, by = c("ID" = "id"))
+#groups_master$id_old <- as.character(groups_master$id_old)
+#groups_master <- groups_master[!is.na(groups_master$group),]
+flow_data <- flow_data[,c("id","bicycle_16p")]
+#flow_data <- flow_data[flow_data$id %in% groups_master$id_old,]
+#routes_master <- routes_master[routes_master$ID %in% groups_master$id_old,]
+#flow_data <- left_join(flow_data,groups_master, by = c("id" = "id_old"))
+routes_master@data <- left_join(routes_master@data, flow_data, by = c("ID" = "id"))
 
 #Remove Unneeded data
-routes_master@data = routes_master@data[,c("ID","bicycle_16p","group")]
+routes_master@data = routes_master@data[,c("ID","bicycle_16p")] #,"group")]
+#routes_master@data = routes_master@data[,c("ID","bicycle_16p","group")]
 remove(flow_data,groups_master)
 routes_master = routes_master[routes_master$bicycle_16p >0,]
 
-group_list = as.data.frame(table(routes_master$group))
-group_list$Var1 = as.integer(group_list$Var1)
+#group_list = as.data.frame(table(routes_master$group))
+#group_list$Var1 = as.integer(group_list$Var1)
 
 
 routes_master <- spTransform(routes_master, CRS( "+init=epsg:27700" ) )
-routes_poly <- gBuffer(routes_master, byid = T, width = 12) 
+routes_poly <- gBuffer(routes_master, byid = T, width = 10) 
+#routes_poly <- gSimplify(routes_poly, tol = 0.1, topologyPreserve=T)
+writeOGR(routes_poly,"../pct-lsoa/Data/03_Intermediate/routes","rf_nat_4plus_fix","ESRI Shapefile")
+writeOGR(routes_master,"../pct-lsoa/Data/03_Intermediate/routes","rf_nat_4plus_fix_lines","ESRI Shapefile")
+
+
+
+
+
+
+
+
+
 raster_master <- raster(resolution = resolution, ext = extent(routes_master), crs= "+init=epsg:27700", vals = 0)
 dataType(raster_master) <- "INT2U"
 vx <- velox(raster_master, extent=extent(routes_master), res=c(resolution,resolution), crs="+init=epsg:27700")
