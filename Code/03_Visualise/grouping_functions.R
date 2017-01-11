@@ -273,3 +273,83 @@ grouplines_GrdBear <- function(lines_master, group_no, grid_size, attempts){
 
   return(groups_master)
 }
+
+
+########################################################################################################
+
+grouppoly_complete <- function(lines_master, group_no, size_limit){
+  
+  groups_master =  data.frame(id=as.character(),nrow=as.integer())
+  id2id = data.frame(id_old=as.character(lines_master$id),id_new=as.integer(1:nrow(lines_master)))
+  lines_master$id <- id2id$id_new
+  
+  #Check if too many lines to do at once
+  if(nrow(lines_master) < size_limit){
+    goes = 1
+  } else {
+    goes = ceiling(nrow(lines_master)/size_limit)
+  }
+  
+  #Loop for when too many lines
+  for(v in 1:goes){
+    print(paste0("Doing loop ",as.character(v)," of ",as.character(goes)," at ",Sys.time()))
+    lines <- lines_master[seq.int(from = v, to = nrow(lines_master), goes),] # Subset evenly across the country
+    matrix_master= gOverlaps(lines, byid = T)
+    colnames(matrix_master) <- lines$id
+    rownames(matrix_master) <- lines$id
+    matrix = matrix_master
+    groups =  data.frame(id=as.character(lines$id),nrow=as.integer(0)) #create a table of IDs to store which group they should go in
+    pb <- winProgressBar(title="Grouping progress bar", min=0, max=nrow(lines), initial=0, label="0 lines done")
+    progress = 0
+    #Outer Loop
+    for(i in 1:nrow(lines)){ #loop thought every line
+      rowsum = data.frame(name=rownames(matrix),count=rowSums(matrix))
+      if(nrow(matrix) == 0){
+        break()
+      }
+      else {
+        max1 = max(rowsum$count)
+        row1 = as.character(rowsum$name[rowsum$count == max1][1])
+        line1 = lines[lines$id == row1,]
+        groups[groups$id==line1$id,2] <- group_no
+        partners1 = matrix[row1,]
+        partners_name1 = names(partners1[partners1 == FALSE])
+        matrix = matrix[!(rownames(matrix) %in% row1),!(colnames(matrix) %in% row1), drop = F]
+        submatrix = matrix[(rownames(matrix) %in% partners_name1),(colnames(matrix) %in% partners_name1), drop = F]
+        #Inner Loop
+        
+        for(j in 1:nrow(submatrix)){
+          if(nrow(submatrix) == 0){
+            break()
+          }
+          else {
+            subrowsum = data.frame(name=rownames(submatrix),count=rowSums(submatrix))
+            max2 = max(subrowsum$count)
+            row2 = as.character(subrowsum$name[subrowsum$count == max2][1])
+            line2 = lines[lines$id == row2,]
+            groups[groups$id==line2$id,2] <- group_no
+            partners2 = matrix[row2,]
+            matrix = matrix[!(rownames(matrix) %in% row2),!(colnames(matrix) %in% row2), drop = F]
+            submatrix = submatrix[!(rownames(submatrix) %in% row2),!(colnames(submatrix) %in% row2), drop = F]
+            partners_name2 = names(partners2[partners2 == FALSE])
+            submatrix = submatrix[(rownames(submatrix) %in% partners_name2),(colnames(submatrix) %in% partners_name2), drop = F]
+            progress = progress + 1
+            info <- sprintf("%d lines done", progress)
+            setWinProgressBar(pb, progress, label = info)
+          }
+        }
+      }
+      group_no = group_no + 1
+      
+    }
+    close(pb)
+    
+    groups_master = rbind(groups_master, groups)
+  }
+  groups_master$id = as.integer(groups_master$id)
+  groups_master = left_join(groups_master, id2id, by = c("id" = "id_new"))
+  return(groups_master)
+  
+}
+
+########################################################################################################

@@ -3,13 +3,13 @@
 
 
 #Add rasters togther
-stack <- raster("../pct-lsoa/Data/03_Intermediate/raster/rf_nat_4plus_bearing_velox_1.tif")
+stack <- raster("../pct-lsoa/Data/03_Intermediate/temp/rasters/indiv/rf-nat-4p-1.tif")
 stack[is.na(stack[])] <- 0 
 
 
 #Still creating lots of temp rasters
-for(m in 2:180 ){  #max(groups[,2])
-  sub <- raster(paste0("../pct-lsoa/Data/03_Intermediate/raster/rf_nat_4plus_bearing_velox_",m,".tif"))
+for(m in 2:20000 ){  #max(groups[,2])
+  sub <- raster(paste0("../pct-lsoa/Data/03_Intermediate/temp/rasters/indiv/rf-nat-4p-",m,".tif"))
   sub[is.na(sub[])] <- 0 
   stack <- overlay(stack, sub, fun=function(x,y){return(x+y)}, filename='over_tmp.grd', overwrite = TRUE )
   stack[is.na(stack[])] <- 0 
@@ -21,9 +21,10 @@ writeRaster(stack,filename = "../pct-lsoa/Data/03_Intermediate/raster/rf_nat_4pl
 
 #Using Raster stack method
 library(raster)
-list <- list.files(path='../pct-lsoa/Data/03_Intermediate/raster/bearing/', full.names=TRUE)
+list <- list.files(path='../pct-lsoa/Data/03_Intermediate/temp/rasters/indiv/', full.names=TRUE)
 head(list)
-rasterStack <- stack(list)
+sublist <- list[1:100]
+rasterStack <- stack(sublist)
 rastersum <- stackApply(rasterStack,1,fun =sum)
 
 
