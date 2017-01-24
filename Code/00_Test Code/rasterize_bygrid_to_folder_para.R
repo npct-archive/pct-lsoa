@@ -9,8 +9,8 @@ library(maptools)
 
 
 #Inputs
-routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus_fix.Rds")   #CHANGE ME
-flow_data = readRDS("../pct-lsoa/Data/02_Input/LSOA_flow.Rds") #CHANGE ME
+routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_all.Rds")   #CHANGE ME
+flow_data = read.csv("../pct-bigdata-lsoa/flow_results_nat_161220/flow_results_nat_161220.csv") #CHANGE ME
 
 #Parameters
 resolution = 10 #Pixle size in meters
@@ -21,14 +21,21 @@ outfld <- "../pct-lsoa/Data/03_Intermediate/raster-grid-par/" #Where results are
 if (!isTRUE(file.info(outfld)$isdir)) dir.create(outfld, recursive=TRUE)
 
 #Prep and Join data
-flow_data <- flow_data[,c("id","bicycle_16p")]
+#flow_data <- flow_data[,c("id","bicycle_16p")]
+head(flow_data)
+flow_data$govtarget_slc <- as.integer(round(flow_data$govtarget_slc,0))
+flow_data$gendereq_slc <- as.integer(round(flow_data$gendereq_slc,0))
+flow_data$dutch_slc <- as.integer(round(flow_data$dutch_slc,0))
+flow_data$ebike_slc <- as.integer(round(flow_data$ebike_slc,0))
+head(flow_data)
+
 routes_master@data <- left_join(routes_master@data, flow_data, by = c("ID" = "id"))
 
 #Remove Unneeded data
-routes_master@data = routes_master@data[,c("ID","bicycle_16p")]
+routes_master@data = routes_master@data[,c("ID","govtarget_slc")]
 remove(flow_data) #,groups_master)
-routes_master = routes_master[routes_master$bicycle_16p >0,]
-
+routes_master = routes_master[routes_master$govtarget_slc >0,]
+nrow(routes_master)
 routes_master <- spTransform(routes_master, CRS( "+init=epsg:27700" ) )
 points <- SpatialLinesMidPoints(routes_master)
 

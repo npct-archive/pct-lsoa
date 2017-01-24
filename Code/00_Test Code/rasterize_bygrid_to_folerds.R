@@ -9,7 +9,7 @@ library(maptools)
 
 
 #Inputs
-routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus_fix.Rds")   #CHANGE ME
+routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_less3p_fix.Rds")   #CHANGE ME
 flow_data = readRDS("../pct-lsoa/Data/02_Input/LSOA_flow.Rds") #CHANGE ME
 
 #Parameters
@@ -47,7 +47,7 @@ print(paste0("There are ",nrow(tab), " grids to do"))
 
 #Loop thougjh each grid cell and make a raster
 for(i in tab$Var1){
-  print(paste0("Doing ",tab$Freq[tab$Var1=i]," lines in  grid number ", i," at ",Sys.time()))
+  print(paste0("Doing ",tab$Freq[tab$Var1==i]," lines in  grid number ", i," at ",Sys.time()))
   lines <- routes_master[routes_master$grid == i,]
   names(lines) <- c("id","bike","grid")
   polys <- gBuffer(lines, byid = T, width = 10)
@@ -64,7 +64,7 @@ for(i in tab$Var1){
     lines2raster = polys[k,]
     vx_sub <- vx
     vx_sub$rasterize(lines2raster, field="bike", band=1, background = 0)
-    to <- paste0("D:/Git/pct-lsoa/Data/03_Intermediate/temp/rasters/indiv-grid/",i,"/rf-nat-4p-",k,".tif") #CHNAGE ME n.b. don't change the i and k variables
+    to <- paste0("D:/Git/pct-lsoa/Data/03_Intermediate/temp/rasters/indiv-grid-3l/",i,"/rf-nat-l3p-",k,".tif") #CHNAGE ME n.b. don't change the i and k variables
     todir <- dirname(to)
     if (!isTRUE(file.info(todir)$isdir)) dir.create(todir, recursive=TRUE)
     vx_sub$write(path = to)
