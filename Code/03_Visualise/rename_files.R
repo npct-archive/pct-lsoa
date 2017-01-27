@@ -6,9 +6,9 @@
 #############
 
 
-folder <- "E:/Users/Malcolm/Git/pct-lsoa/Data/test" #Where are the files to rename?
-common_start <- "abc-" #Any test that appears at the start of every file
-common_end   <- ".txt" #Any test that appears at the start of every file e.g. file extension
+folder <- "C:/results/census3l - Copy" #Where are the files to rename?
+common_start <- "grd-" #Any test that appears at the start of every file
+common_end   <- ".tif" #Any test that appears at the start of every file e.g. file extension
 
 files <- list.files(folder, full.names = T) #,pattern=”searchPattern”)
 

@@ -6,9 +6,9 @@ library(sp)
 library(maptools)
 
 #Inputs
-routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_less3p_fix.Rds")   #CHANGE ME
+routes_master = readRDS("../pct-lsoa/Data/03_Intermediate/routes/rf_nat_4plus_fix.Rds")   #CHANGE ME
 flow_data =  read.csv("../pct-lsoa/Data/02_Input/flow_results_nat_round_170121.csv") #CHANGE ME
-outfld <- "../pct-lsoa/Data/03_Intermediate/routes/par_batch/gender-l3/" #CHANGE ME - where results are saved
+outfld <- "../pct-lsoa/Data/03_Intermediate/routes/par_batch/test/" #CHANGE ME - where results are saved
 scenario <- "gendereq_slc_r" #Which scenario do you want to do gendereq_slc_r govtarget_slc_r  dutch_slc_r ebike_slc_r
 
 #Make Out folder
