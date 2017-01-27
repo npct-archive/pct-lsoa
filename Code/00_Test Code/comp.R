@@ -7,16 +7,15 @@ library(rgdal)
 library(maptools)
 
 #Inputs
-infld <- "D:/Git/pct-lsoa/Data/03_Intermediate/routes/par_batch/gov-4p/"
-inname <- "govtarget_slc_r-" #Which scenario do you want to do gendereq_slc_r- govtarget_slc_r-  dutch_slc_r- ebike_slc_r-
-outfld <- "D:/results/gov-4p/"
-clusterNo <- 5
+infld <- "../pct-lsoa/Data/03_Intermediate/routes/par_batch/gender-4p/"
+inname <- "gendereq_slc_r-" #Which scenario do you want to do gendereq_slc_r- govtarget_slc_r-  dutch_slc_r- ebike_slc_r-
+outfld <- "D:/results/gender-4p-redo/"
+clusterNo <- 1
 
 #Parameters
 resolution = 10 #Pixle size in meters
 limit = 200 #Maximum number of lines to be done at once
 options(nwarnings = 10000)
-options("warn" = 1)
 
 #Get input file
 routes_master = readRDS(paste0(infld,inname,clusterNo,".Rds"))   
@@ -76,6 +75,7 @@ for(i in tab$grid){
     print("Too large breaking into chunks")
     for(l in 1:ceiling(nrow(polys)/limit)){
       print(paste0("Doing part ",l," of ",ceiling(nrow(polys)/limit)," at ",Sys.time()))
+      print(warnings())
       lstart <- 1 + limit * (l-1)
       lfin <- if(limit * l > nrow(polys)){nrow(polys)}else{limit*l}
       lx <- list(vx)
@@ -84,7 +84,6 @@ for(i in tab$grid){
       remove(lx)
       
       #loop though each line and rasterize
-      print(paste0("Rasterize at ",Sys.time()))
       for(k in lstart:lfin ){  
         lines2raster = polys[k,]
         vx_sub2$rasterize(lines2raster, field="bike", band= (k - lstart + 1), background = 0)
@@ -92,7 +91,6 @@ for(i in tab$grid){
       remove(lines2raster)
       
       #Add rasters togther
-      print(paste0("Add togther at ",Sys.time()))
       rs <- vx_sub2$as.RasterStack()
       remove(vx_sub2)
       rsum <- stackApply(rs, 1, sum)
