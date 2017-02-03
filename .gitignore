@@ -1,5 +1,7 @@
 .Rproj.user
+.Rproj.user/B714D1D0/
 .Rhistory
+.Rhistory/
 .RData
 Data/01_Raw/Flow/WM12EW[CT0489]_lsoa.zip
 Data/02_Input/LSOA_flow.Rds
@@ -9,6 +11,7 @@ Data/03_Intermediate/routes/
 Data/03_Intermediate/lines/
 Data/03_Intermediate/interaction/
 Data/04_Output/rasters
+Code/03_Visualise/rasterize versions/
 
 *.Rhistory
 .Renvrion
